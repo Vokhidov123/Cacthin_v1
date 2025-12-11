@@ -1,5 +1,3 @@
-# src/core/middleware.py
-
 import logging
 import os
 from typing import Any, Optional

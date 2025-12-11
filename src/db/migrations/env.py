@@ -40,6 +40,7 @@ target_metadata = Base.metadata
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode using AsyncEngine."""
     
+    # ⚠️ Читаем конфигурацию синхронного Engine
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
@@ -47,34 +48,22 @@ def run_migrations_online() -> None:
     )
 
     async def run_async_migrations():
-        # ⚠️ ИЗМЕНЕНИЕ 1: Создаем AsyncEngine
         async_connectable = AsyncEngine(connectable)
 
         async with async_connectable.connect() as connection:
             
-            # ⚠️ ИЗМЕНЕНИЕ 2: Конфигурация контекста Alembic
-            # Здесь мы используем run_sync, чтобы передать синхронное подключение (connection) 
-            # в контекст Alembic.
             await connection.run_sync(
                 lambda sync_connection: context.configure(
                     connection=sync_connection, 
                     target_metadata=target_metadata,
+                    transactional_ddl=False, 
                 )
             )
 
-            # ⚠️ ИЗМЕНЕНИЕ 3: Выполнение миграций
-            # Запускаем context.run_migrations() в отдельной транзакции 
-            # внутри run_sync. context.run_migrations() не принимает аргументов!
             await connection.run_sync(
-                lambda sync_connection:
-                # context.begin_transaction() уже не нужен здесь, так как транзакция
-                # управляется connection.run_sync и run_migrations. 
-                # Если Alembic сам не открывает транзакцию, мы можем это сделать явно:
-                # with context.begin_transaction(): # <--- Если нужно
-                context.run_migrations()
+                lambda sync_connection: context.run_migrations()
             )
 
-    # Запуск асинхронной функции
     asyncio.run(run_async_migrations())
 
 

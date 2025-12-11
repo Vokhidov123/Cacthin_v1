@@ -1,6 +1,8 @@
-from sqlalchemy import String, Float, Boolean, ForeignKey
+from sqlalchemy import String, Float, Boolean, ForeignKey, JSON
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.db.base import Base, TimestampMixin
+from typing import Optional, List, Dict, Any
 
 class Item(TimestampMixin, Base):
     __tablename__ = "items"
@@ -11,5 +13,11 @@ class Item(TimestampMixin, Base):
     category: Mapped[str] = mapped_column(String(100), nullable=False)
     is_available: Mapped[bool] = mapped_column(Boolean, default=True)
 
+    characteristics: Mapped[Dict[str, Any]] = mapped_column(
+        JSONB,
+        nullable=False,
+        default={}
+    )
+    
+
     owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    owner: Mapped["User"] = relationship("User", backref="items")
